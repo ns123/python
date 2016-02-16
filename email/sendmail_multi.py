@@ -50,7 +50,7 @@ def JudgeDirExist(DirIn):#判断传入的列表里，文件路径是不是存在
         input("Please check out the ToEmailList.ini %s !"% DirIn)
     else:
         return True
-
+'''
 def FindTheLastFile(base_dir):#根据传入的目录名找到创建时间为最后的文件，并返回其完整路径
     DirInList = os.listdir(base_dir)
     filelist = []#文件列表
@@ -71,6 +71,37 @@ def FindTheLastFile(base_dir):#根据传入的目录名找到创建时间为最�
     TheLastFileName = filelist[timelist.index(max(timelist))]
 
     return os.path.join(base_dir,TheLastFileName)#path=目录+文件名
+'''
+class FindTheLastFile(object):
+    def __init__(self,base_dir):
+        self.bdir=base_dir
+        self.file_name=''
+        pass
+
+    def find_file_name(self):
+        self.TheLastFileName = ''
+        self.DirInList = os.listdir(self.bdir)
+        filelist = []
+        timelist = []
+        for i in range(0, len(self.DirInList)):
+            path = os.path.join(self.bdir,self.DirInList[i])#path=目录+文件名
+            if os.path.isfile(path):
+                filelist.append(self.DirInList[i])
+
+        for i in range(0, len(filelist)):
+            path = os.path.join(self.bdir, filelist[i])
+            if os.path.isdir(path):
+                pass
+
+            else:
+                timelist.append(os.path.getctime(path))#getctime创建时间
+        self.TheLastFileName = filelist[timelist.index(max(timelist))]
+        self.file_name = self.TheLastFileName
+        return self.TheLastFileName
+
+    def Whole_Path(self):
+        return os.path.join(self.bdir,self.file_name)#path=目录+文件名
+
 
 
 if __name__ == '__main__':
@@ -89,7 +120,12 @@ if __name__ == '__main__':
         to_title = d.get(to_addr,'Title')
         to_main = d.get(to_addr,'Text')
         to_dir = d.get(to_addr,'Dir')
+
+        
         JudgeDirExist(to_dir)#判断一下是不是有不存在的路径
+        dirs = FindTheLastFile(to_dir)
+        dirs.find_file_name()
+
 
         msg = MIMEMultipart()
         msg['From'] = _format_addr(u'发送自 <%s>' % from_addr)
@@ -99,9 +135,9 @@ if __name__ == '__main__':
         msg.attach(MIMEText(u'%s' % to_main, 'plain', 'utf-8'))
 
         # add file:
-        with open(FindTheLastFile(to_dir), 'rb') as f:
-            mime = MIMEBase('Excel', 'xlsx', filename='运行数据')
-            mime.add_header('Content-Disposition', 'attachment', filename='数据.xlsx')
+        with open(dirs.Whole_Path(), 'rb') as f:
+            mime = MIMEBase('Excel', 'xlsx', filename=dirs.file_name)
+            mime.add_header('Content-Disposition', 'attachment', filename=dirs.file_name)
             mime.add_header('Content-ID', '<0>')
             mime.add_header('X-Attachment-Id', '0')
             mime.set_payload(f.read())
